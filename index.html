@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Malalignment Test (MAT): interactive lower-limb deformity analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#E4EAF3; --panel:#F8FAFD; --film:#CAD7EB; --film-edge:#A7BAD7;
+  --ink:#16203A; --muted:#4B5673; --rule:#C3CEDF;
+  --bone:#EAE2D0; --bone-line:#978872; --bone-deep:#D9CCB0;
+  --mech:#D9431A; --anat:#1C57C0; --jl:#0C6C5C; --pt:#22A6D9;
+  --ok:#2B7A38; --warn:#A6531A; --bad:#B0281F; --cora:#7A2EB4;
+  --gap:#36A05A; --over:#C8432F;
+  --sel:#16203A; --sel-ink:#F8FAFD; --chip:#E9EEF6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D131E; --panel:#141C2B; --film:#0A1322; --film-edge:#22324C;
+    --ink:#E5EBF5; --muted:#A1AEC6; --rule:#25324A;
+    --bone:#D6CEB8; --bone-line:#F4ECD8; --bone-deep:#B9AF94;
+    --mech:#FF6C3E; --anat:#7AA8FF; --jl:#4ED2B9; --pt:#4CC6F2;
+    --ok:#6BCB77; --warn:#F0A35E; --bad:#FF7B70; --cora:#C79BFF;
+    --gap:#5FCB7E; --over:#FF7B6B;
+    --sel:#E5EBF5; --sel-ink:#0D131E; --chip:#1D2738;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D131E; --panel:#141C2B; --film:#0A1322; --film-edge:#22324C;
+  --ink:#E5EBF5; --muted:#A1AEC6; --rule:#25324A;
+  --bone:#D6CEB8; --bone-line:#F4ECD8; --bone-deep:#B9AF94;
+  --mech:#FF6C3E; --anat:#7AA8FF; --jl:#4ED2B9; --pt:#4CC6F2;
+  --ok:#6BCB77; --warn:#F0A35E; --bad:#FF7B70; --cora:#C79BFF;
+  --gap:#5FCB7E; --over:#FF7B6B;
+  --sel:#E5EBF5; --sel-ink:#0D131E; --chip:#1D2738;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Newsreader",Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:-.005em;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--anat);outline-offset:2px}
+
+header{padding:18px clamp(14px,3vw,32px) 10px;display:flex;flex-wrap:wrap;gap:6px 28px;align-items:end;justify-content:space-between}
+header h1{font-size:clamp(1.55rem,2.6vw,2.15rem);line-height:1.1}
+header p{margin:4px 0 0;color:var(--muted);font-size:.95rem;max-width:62ch}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:26px;height:0;border-top:2.5px dashed currentColor}
+.legend .lm{color:var(--mech)} .legend .la{color:var(--anat)} .legend .lj{color:var(--jl)} .legend .lj i{border-top-style:solid} .legend .lc{color:var(--cora)}
+
+nav.rail{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--rule);padding:8px clamp(10px,3vw,32px);display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding-top:max(8px,env(safe-area-inset-top,0px))}
+nav.rail button{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--rule);background:var(--panel);border-radius:999px;padding:5px 13px 5px 5px;cursor:pointer;font-size:.88rem;white-space:nowrap}
+nav.rail button b{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:50%;background:var(--chip);font-weight:700;font-size:.8rem}
+nav.rail button[aria-current="true"]{background:var(--sel);color:var(--sel-ink);border-color:var(--sel)}
+nav.rail button[aria-current="true"] b{background:var(--mech);color:#fff}
+
+main{display:grid;grid-template-columns:minmax(320px,1fr) minmax(340px,470px);gap:18px;padding:16px clamp(10px,3vw,32px) 40px;align-items:start}
+.film{background:var(--film);border:1px solid var(--film-edge);border-radius:10px;padding:6px;position:sticky;top:60px}
+.film svg{display:block;width:100%;height:auto;max-height:calc(100vh - 92px);touch-action:manipulation}
+.film .cap{font-size:.78rem;color:var(--muted);padding:2px 8px 4px;display:flex;justify-content:space-between;gap:10px}
+.lesson{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:20px 22px 24px}
+.lesson h2{font-size:1.6rem;line-height:1.15;margin-bottom:4px}
+.lesson .sub{color:var(--muted);margin:0 0 12px;font-size:.95rem}
+.lesson p{margin:.55em 0;max-width:68ch}
+.lesson h3{font-size:1.12rem;margin:18px 0 6px}
+.lesson ul,.lesson ol{padding-left:1.25em;margin:.4em 0}
+.lesson li{margin:.25em 0}
+.key{border-left:4px solid var(--mech);background:var(--chip);padding:10px 14px;border-radius:0 8px 8px 0;margin:14px 0;font-size:.95rem}
+.key.blue{border-color:var(--anat)} .key.teal{border-color:var(--jl)} .key.purple{border-color:var(--cora)}
+
+ol.guide{list-style:none;padding:0;counter-reset:g;margin:10px 0}
+ol.guide li{counter-increment:g;display:grid;grid-template-columns:30px 1fr;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;margin:2px 0;color:var(--muted)}
+ol.guide li::before{content:counter(g);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--rule);font-weight:700;font-size:.82rem}
+ol.guide li.done{color:var(--ink)}
+ol.guide li.done::before{background:var(--chip);border-color:var(--muted)}
+ol.guide li.cur{background:var(--chip);color:var(--ink)}
+ol.guide li.cur::before{background:var(--mech);border-color:var(--mech);color:#fff}
+ol.guide li b{display:block;color:var(--ink)}
+
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.btn{border:1px solid var(--rule);background:var(--panel);padding:7px 13px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--sel);color:var(--sel-ink);border-color:var(--sel)}
+.btn.on{background:var(--chip);border-color:var(--ink)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.presets .btn{font-weight:500;font-size:.84rem;padding:5px 10px}
+
+.ctl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;margin:10px 0}
+.ctl label{font-weight:600;font-size:.92rem}
+.ctl output{font-variant-numeric:tabular-nums;font-weight:700;font-size:.95rem}
+.ctl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--mech)}
+.ctl small{grid-column:1/-1;color:var(--muted);font-size:.8rem;margin-top:-2px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 12px;cursor:pointer;font-size:.88rem}
+.seg button[aria-pressed="true"]{background:var(--sel);color:var(--sel-ink)}
+
+.sim{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin:14px 0;background:var(--bg)}
+.sim h3{margin-top:0}
+
+table.read{width:100%;border-collapse:collapse;font-size:.9rem;margin:8px 0}
+table.read th,table.read td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.read th{font-weight:600;color:var(--muted);font-size:.8rem}
+table.read td.n{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+table.read tr.hl{background:var(--chip)}
+table.read tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--mech)}
+.chip{display:inline-block;font-size:.76rem;font-weight:700;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.chip.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.chip.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.chip.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.verdict{border:1.5px solid var(--ink);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:.95rem}
+.verdict b{font-family:"Newsreader",Georgia,serif;font-size:1.08rem}
+ol.flow{list-style:none;padding:0;margin:8px 0;counter-reset:f}
+ol.flow li{counter-increment:f;display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--rule);font-size:.92rem}
+ol.flow li::before{content:"Step " counter(f);content:counter(f);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--chip);font-weight:700;font-size:.78rem}
+ol.flow li:first-child::before{content:"0"}
+ol.flow li:first-child{counter-reset:f -1}
+
+details.norms{margin-top:18px;border-top:1px solid var(--rule);padding-top:10px}
+details.norms summary{cursor:pointer;font-weight:600}
+.fb{margin:10px 0;padding:10px 12px;border-radius:8px;background:var(--chip);font-size:.93rem}
+.fb.good{box-shadow:inset 4px 0 0 var(--ok)} .fb.bad{box-shadow:inset 4px 0 0 var(--bad)}
+fieldset{border:1px solid var(--rule);border-radius:8px;margin:10px 0;padding:8px 12px}
+legend{font-weight:600;font-size:.9rem;padding:0 4px}
+fieldset label{margin-right:14px;display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+
+/* SVG */
+svg text{font-family:"Public Sans",system-ui,sans-serif}
+.bone{fill:var(--bone);stroke:var(--bone-line);stroke-width:1.4;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.bone.soft{fill-opacity:.85}
+.notch{fill:var(--bone-line);opacity:.28;stroke:none}
+.detail{fill:none;stroke:var(--bone-line);stroke-width:1;opacity:.35;vector-effect:non-scaling-stroke}
+.hole{fill:var(--film);stroke:var(--bone-line);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.mech,.mechS,.anat,.anatS,.jl,.ref,.bis,.tmpl,.arc,.madline,.cut,.zone,.link{fill:none;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.mech{stroke:var(--mech);stroke-width:2.3;stroke-dasharray:8 5}
+.mechS{stroke:var(--mech);stroke-width:2.3}
+.mech.faint{opacity:.35}
+.anat{stroke:var(--anat);stroke-width:2.1;stroke-dasharray:3 4}
+.seg2{fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:7 4;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.anatS{stroke:var(--anat);stroke-width:2.1}
+.jl{stroke:var(--jl);stroke-width:2.3}
+.ref{stroke:var(--muted);stroke-width:1.3;stroke-dasharray:2 4}
+.bis{stroke:var(--cora);stroke-width:1.8;stroke-dasharray:5 4}
+.tmpl{stroke:var(--ink);stroke-width:1.1}
+.cut{stroke:var(--ink);stroke-width:2.2;stroke-dasharray:6 3}
+.zone{stroke:var(--gap);stroke-width:7;opacity:.55;stroke-linecap:butt}
+.madline{stroke:var(--mech);stroke-width:2.4}
+.link{stroke:var(--jl);stroke-width:1;stroke-dasharray:3 3;opacity:.8}
+.pt{fill:var(--pt);stroke:var(--bone-line);stroke-width:1;vector-effect:non-scaling-stroke}
+.pt.ink{fill:var(--ink)}
+.cora{fill:var(--cora);stroke:var(--panel);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.aca{fill:none;stroke:var(--anat);stroke-width:2.5;vector-effect:non-scaling-stroke}
+.wedge{stroke:none;opacity:.2}
+.arc{stroke-width:2}
+.m{stroke:var(--mech);fill:var(--mech)} .a{stroke:var(--anat);fill:var(--anat)} .j{stroke:var(--jl);fill:var(--jl)} .c{stroke:var(--cora);fill:var(--cora)}
+.st-bad{stroke:var(--bad);fill:var(--bad)}
+.arc.m,.arc.a,.arc.j,.arc.c,.arc.st-bad{fill:none}
+.lbl{font-size:12.5px;font-weight:600;fill:var(--ink);stroke:var(--film);stroke-width:3.5px;paint-order:stroke;stroke-linejoin:round}
+.lbl.val{font-size:13.5px;font-weight:700}
+.lbl.m{fill:var(--mech)} .lbl.a{fill:var(--anat)} .lbl.j{fill:var(--jl)} .lbl.c{fill:var(--cora)} .lbl.st-bad{fill:var(--bad)}
+.lbl.big{font-size:15px}
+.lbl.dim{fill:var(--muted);font-weight:500}
+.side{font-size:13px;font-weight:600;fill:var(--muted);letter-spacing:.02em}
+.inset .lbl,.inset .side{display:none}
+.inset-bg{fill:var(--film);stroke:none}
+.inset-frame,.inset-src{fill:none;stroke:var(--jl);stroke-width:1.2;stroke-dasharray:4 3}
+.inset-cap{font-size:12px;font-weight:700;fill:var(--jl)}
+.fo{fill:none;stroke:var(--bone-line);stroke-width:47;stroke-linejoin:round}
+.fbn{fill:none;stroke:var(--bone);stroke-width:44;stroke-linejoin:round}
+.fcn{fill:none;stroke:var(--bone-deep);stroke-width:15;stroke-linejoin:round}
+.gapw{fill:var(--gap);opacity:.55} .overw{fill:var(--over);opacity:.55}
+.click{stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke}
+.err{stroke:var(--bad);stroke-width:1.5;stroke-dasharray:2 2;vector-effect:non-scaling-stroke}
+.hit{cursor:crosshair}
+
+@media (max-width:900px){
+  main{grid-template-columns:1fr}
+  .film{position:relative;top:0}
+  .film svg{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Malalignment Test (MAT)</h1>
+    <p>Trace the lines, read the angles and localise lower-limb deformity, step by step. Built for orthopaedic residents; values follow Paley's normal ranges.</p>
+  </div>
+  <div class="legend" aria-label="Line legend">
+    <span class="lm"><i></i>Mechanical axis</span>
+    <span class="la"><i></i>Anatomical axis</span>
+    <span class="lj"><i></i>Joint orientation line</span>
+    <span class="lc"><i></i>CORA and bisector</span>
+  </div>
+</header>
+<nav class="rail" id="rail" aria-label="Lesson steps"></nav>
+<main>
+  <div class="film">
+    <div class="cap"><span id="filmcap">Right lower limb, standing AP</span><span id="filmhint"></span></div>
+    <svg id="svg" viewBox="60 30 520 950" role="img" aria-label="Lower limb bone model with measurement lines">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--mech)"/></marker>
+        <marker id="arwk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink)"/></marker>
+        <filter id="boneShade" x="-10%" y="-5%" width="120%" height="110%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+          <feDiffuseLighting in="blur" surfaceScale="3.2" diffuseConstant="1" lighting-color="#ffffff" result="diff"><feDistantLight azimuth="210" elevation="58"/></feDiffuseLighting>
+          <feComponentTransfer in="diff" result="diffSoft"><feFuncR type="linear" slope="0.62" intercept="0.45"/><feFuncG type="linear" slope="0.62" intercept="0.45"/><feFuncB type="linear" slope="0.64" intercept="0.43"/></feComponentTransfer>
+          <feComposite in="diffSoft" in2="SourceAlpha" operator="in" result="diffIn"/>
+          <feSpecularLighting in="blur" surfaceScale="3.2" specularConstant="0.28" specularExponent="16" lighting-color="#fffdf6" result="spec"><feDistantLight azimuth="210" elevation="58"/></feSpecularLighting>
+          <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+          <feBlend in="SourceGraphic" in2="diffIn" mode="multiply" result="shaded"/>
+          <feComposite in="specIn" in2="shaded" operator="arithmetic" k1="0" k2="0.6" k3="1" k4="0"/>
+        </filter>
+      </defs>
+      <g id="stage"></g>
+    </svg>
+  </div>
+  <section class="lesson" aria-live="polite">
+    <h2 id="ltitle"></h2>
+    <p class="sub" id="lsub"></p>
+    <div id="lbody"></div>
+    <div id="readout"></div>
+    <details class="norms">
+      <summary>Normal values (Paley)</summary>
+      <table class="read">
+        <tr><th>Frontal plane</th><th>Normal</th></tr>
+        <tr><td>MAD</td><td class="n">8 ± 7 mm medial (1 to 15)</td></tr>
+        <tr><td>mLPFA</td><td class="n">90° (85 to 95)</td></tr>
+        <tr><td>mLDFA</td><td class="n">87° (85 to 90)</td></tr>
+        <tr><td>aLDFA</td><td class="n">81° (79 to 83)</td></tr>
+        <tr><td>Femoral anatomical–mechanical angle</td><td class="n">7° ± 2°</td></tr>
+        <tr><td>MPTA</td><td class="n">87° (85 to 90)</td></tr>
+        <tr><td>JLCA</td><td class="n">0 to 2° (converging medially)</td></tr>
+        <tr><td>LDTA</td><td class="n">89° (86 to 92)</td></tr>
+        <tr><th>Sagittal plane</th><th></th></tr>
+        <tr><td>aPDFA</td><td class="n">83° (79 to 87)</td></tr>
+        <tr><td>aPPTA</td><td class="n">81° (77 to 84)</td></tr>
+        <tr><td>aADTA</td><td class="n">80° (78 to 82)</td></tr>
+      </table>
+    </details>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+/* ---------- geometry helpers ---------- */
+const D2R=Math.PI/180;
+const P=(x,y)=>({x,y});
+const add=(a,b)=>P(a.x+b.x,a.y+b.y), sub=(a,b)=>P(a.x-b.x,a.y-b.y), mul=(a,k)=>P(a.x*k,a.y*k);
+const dotp=(a,b)=>a.x*b.x+a.y*b.y;
+const len=v=>Math.hypot(v.x,v.y);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+// angle convention: 0 = straight down the screen, +90 = towards +x (lateral / anterior)
+const dir=a=>P(Math.sin(a*D2R),Math.cos(a*D2R));
+const angOf=v=>Math.atan2(v.x,v.y)/D2R;
+const norm180=a=>((a+180)%360+360)%360-180;
+function rotP(p,c,th){const dx=p.x-c.x,dy=p.y-c.y,C=Math.cos(th*D2R),S=Math.sin(th*D2R);return P(c.x+dx*C+dy*S,c.y-dx*S+dy*C);}
+function lineX(p1,d1,p2,d2){const den=d1.x*d2.y-d1.y*d2.x;if(Math.abs(den)<1e-9)return null;const t=((p2.x-p1.x)*d2.y-(p2.y-p1.y)*d2.x)/den;return add(p1,mul(d1,t));}
+function solve(fn,target,x0){let x=x0;for(let i=0;i<40;i++){const y=fn(x)-target;if(Math.abs(y)<1e-5)break;const h=0.01,d=(fn(x+h)-fn(x))/h;if(Math.abs(d)<1e-6)break;x=clamp(x-y/d,-85,85);}return x;}
+const f=v=>Math.round(v*10)/10;
+const f1=v=>(Math.round(v*10)/10).toFixed(1);
+const f0=v=>String(Math.round(v));
+const deg=v=>f1(v)+"°";
+
+function smooth(pts,closed=true){
+  const n=pts.length;let d=`M${f(pts[0].x)},${f(pts[0].y)}`;
+  const N=closed?n:n-1;
+  for(let i=0;i<N;i++){
+    const p0=closed?pts[(i-1+n)%n]:pts[Math.max(i-1,0)];
+    const p1=pts[i],p2=pts[(i+1)%n];
+    const p3=closed?pts[(i+2)%n]:pts[Math.min(i+2,n-1)];
+    const c1=P(p1.x+(p2.x-p0.x)/6,p1.y+(p2.y-p0.y)/6),c2=P(p2.x-(p3.x-p1.x)/6,p2.y-(p3.y-p1.y)/6);
+    d+=`C${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)} ${f(p2.x)},${f(p2.y)}`;
+  }
+  return d+(closed?"Z":"");
+}
+/* ---------- SVG primitives ---------- */
+const L=(p,q,c)=>`<line class="${c}" x1="${f(p.x)}" y1="${f(p.y)}" x2="${f(q.x)}" y2="${f(q.y)}"/>`;
+const EL=(p,q,e1,e2,c)=>{const d=sub(q,p);return L(sub(p,mul(d,e1)),add(q,mul(d,e2)),c);};
+const LD=(c0,a,l1,l2,cls)=>{const d=dir(a);return L(sub(c0,mul(d,l1)),add(c0,mul(d,l2)),cls);};
+const DOT=(p,c="pt",r=4.5)=>`<circle class="${c}" cx="${f(p.x)}" cy="${f(p.y)}" r="${r}"/>`;
+const T=(p,s,c="lbl",a="start",dy=4)=>`<text class="${c}" x="${f(p.x)}" y="${f(p.y+dy)}" text-anchor="${a}">${s}</text>`;
+const PATH=(pts,c="bone",closed=true)=>`<path class="${c}" d="${smooth(pts,closed)}"${c.startsWith("bone")?' filter="url(#boneShade)"':""}/>`;
+function ARC(v,a1,a2,r,c,label,lr){
+  const d=norm180(a2-a1),p1=add(v,mul(dir(a1),r)),p2=add(v,mul(dir(a1+d),r)),sw=d>0?0:1;
+  let s=`<path class="wedge ${c}" d="M${f(v.x)},${f(v.y)} L${f(p1.x)},${f(p1.y)} A${r},${r} 0 0 ${sw} ${f(p2.x)},${f(p2.y)} Z"/>`;
+  s+=`<path class="arc ${c}" d="M${f(p1.x)},${f(p1.y)} A${r},${r} 0 0 ${sw} ${f(p2.x)},${f(p2.y)}"/>`;
+  if(label){const lp=add(v,mul(dir(a1+d/2),lr||r+20));s+=T(lp,label,"lbl val "+c,"middle",5);}
+  return s;
+}
+
+/* ---------- bone models (frontal, right leg, medial = left) ---------- */
+// Outlines traced from photographs of an anatomical femur and tibia, mapped into the design frame
+// femur: hip centre (0,0), knee centre (0,420); tibia: plateau centre (0,0), ankle centre (0,382)
+const toP=a=>a.map(([x,y])=>P(x,y));
+const FEMUR=toP([[1.8,-25.4],[5.4,-24.9],[10.0,-23.4],[14.0,-21.3],[16.9,-19.2],[19.9,-14.9],[26.5,-1.4],[29.0,1.1],[31.9,2.0],[39.1,2.4],[50.4,1.1],[53.3,1.9],[56.5,3.7],[58.7,6.5],[62.5,15.4],[64.8,22.6],[65.1,27.2],[64.0,35.0],[60.0,43.7],[55.8,49.5],[52.0,56.8],[50.7,65.3],[45.4,84.4],[43.7,106.1],[40.1,127.7],[38.8,144.6],[35.9,155.7],[34.8,170.2],[33.2,179.4],[31.1,210.1],[29.3,220.1],[28.4,234.6],[28.8,244.7],[27.1,271.4],[25.1,283.8],[25.5,295.6],[23.6,327.8],[25.4,355.7],[26.7,366.3],[31.3,375.9],[36.2,380.0],[37.0,381.6],[37.0,384.5],[35.6,391.3],[34.7,400.8],[29.8,411.9],[26.6,416.5],[24.3,418.6],[20.7,418.9],[-5.1,417.5],[-7.9,418.1],[-12.9,420.7],[-19.0,421.1],[-34.3,420.1],[-37.3,418.9],[-39.0,413.9],[-42.9,410.3],[-43.9,407.9],[-44.6,395.5],[-44.7,383.8],[-43.6,380.4],[-40.7,375.3],[-33.6,370.5],[-28.8,365.1],[-26.7,360.0],[-23.1,355.3],[-21.7,349.5],[-18.5,343.3],[-15.8,328.7],[-13.4,319.9],[-12.3,311.3],[-10.0,302.4],[-9.0,295.4],[-6.4,284.2],[-5.6,276.2],[-4.2,269.4],[-3.3,259.0],[-1.9,252.1],[-0.7,237.7],[2.3,224.1],[5.9,170.0],[7.8,158.4],[12.0,94.5],[11.9,89.0],[10.6,83.4],[6.4,80.4],[5.3,78.0],[3.9,66.8],[4.9,60.1],[5.1,54.6],[4.0,52.3],[1.3,50.5],[0.3,49.1],[0.1,41.5],[-1.1,31.7],[-2.2,30.0],[-5.0,27.5],[-7.2,24.3],[-10.7,21.0],[-18.3,17.4],[-24.5,10.8],[-25.2,7.3],[-24.6,-1.5],[-23.9,-5.4],[-21.3,-14.1],[-18.5,-18.6],[-15.0,-21.5],[-8.8,-24.2],[-3.7,-25.5]]);
+const TIBIA=toP([[5.0,-8.6],[6.5,-7.9],[10.4,-4.4],[13.7,-3.7],[16.5,-2.4],[31.8,-2.9],[37.9,-2.3],[39.8,-1.8],[41.0,0.2],[41.7,4.8],[43.0,7.3],[43.8,11.5],[44.0,17.5],[43.7,18.4],[40.8,19.7],[37.1,24.2],[34.4,26.2],[29.9,32.3],[26.3,38.3],[22.4,47.2],[19.9,54.5],[19.3,57.2],[18.0,60.4],[17.7,64.5],[16.7,67.0],[15.0,77.1],[15.4,88.1],[13.6,91.8],[12.6,100.3],[12.7,115.5],[12.0,118.8],[12.1,125.0],[11.4,129.8],[11.9,139.6],[11.5,151.9],[11.9,160.6],[11.3,178.1],[12.0,186.1],[12.5,202.1],[12.3,206.7],[13.0,221.3],[12.5,230.4],[13.5,250.5],[13.2,255.0],[13.7,264.9],[13.4,268.7],[14.1,282.5],[13.8,287.0],[16.1,331.2],[15.4,337.6],[16.1,348.9],[17.7,355.0],[19.3,357.6],[21.2,362.3],[22.1,367.4],[22.3,372.5],[21.7,373.7],[18.5,375.2],[17.2,378.0],[14.5,381.2],[13.2,382.1],[4.5,383.2],[-3.2,381.9],[-8.8,380.5],[-12.5,378.5],[-15.7,378.5],[-17.8,379.4],[-18.9,381.2],[-19.5,383.9],[-21.1,386.3],[-21.8,386.9],[-23.0,387.1],[-24.9,386.5],[-27.2,385.1],[-30.2,380.6],[-30.9,377.4],[-31.4,367.2],[-30.4,364.0],[-30.0,360.9],[-27.4,358.7],[-21.8,349.3],[-19.8,344.6],[-19.8,338.9],[-19.3,338.2],[-17.5,337.0],[-16.8,335.4],[-15.4,328.6],[-14.8,323.8],[-13.9,321.0],[-13.0,315.9],[-11.9,305.1],[-11.9,301.3],[-10.4,294.4],[-9.7,283.0],[-9.1,278.6],[-9.5,273.5],[-8.9,270.9],[-8.8,263.6],[-11.4,211.9],[-11.2,207.0],[-12.5,180.1],[-12.3,174.4],[-13.0,161.8],[-13.7,157.7],[-14.6,147.3],[-14.6,140.4],[-15.3,136.3],[-15.9,126.1],[-16.6,121.6],[-17.9,96.7],[-19.9,87.6],[-20.6,75.8],[-22.5,59.8],[-25.4,44.3],[-26.8,41.6],[-27.6,37.6],[-29.1,34.0],[-30.4,32.3],[-32.6,27.6],[-36.1,22.3],[-39.8,11.7],[-40.4,4.0],[-39.9,2.0],[-38.5,0.7],[-33.0,-2.2],[-29.7,-3.2],[-21.0,-5.0],[-15.1,-7.0],[-10.4,-7.6],[-7.6,-8.7],[-6.4,-8.5],[-3.9,-6.9],[-2.2,-6.6],[1.4,-7.0],[4.1,-8.5]]);
+const FIBULA=toP([[37.4,24.3],[32.2,42.7],[29.2,60.0],[28.5,89.9],[27.8,150.0],[28.9,220.0],[29.0,290.0],[29.5,330.1],[29.7,355.0],[32.7,373.1],[26.3,387.2],[24.1,395.7],[19.7,402.4],[14.7,401.6],[12.2,394.3],[12.0,382.8],[17.9,370.9],[17.7,355.0],[20.5,329.9],[21.0,290.0],[20.9,220.0],[19.4,150.0],[18.5,90.1],[13.2,60.0],[15.0,37.3],[28.5,19.7]]);
+const TALUS=toP([[-21,386],[-10,384.5],[0,384],[10,384],[20,385.5],[25,396],[22,408],[12,416],[0,419],[-12,417],[-21,410],[-25,398]]);
+const HEADR=25.7;
+const FCA=[38.007,-0.10106],TCA=[-3.876,0.01909];
+const FHW=[[100,16.3],[110,16.0],[120,15.5],[130,15.1],[140,15.1],[150,14.5],[160,14.0],[170,14.5],[180,13.9],[190,13.9],[200,13.9],[210,13.9],[220,13.4],[230,13.8],[240,14.8],[250,15.1],[260,15.6],[270,15.7],[280,15.9],[290,16.5],[300,17.5],[310,18.3],[320,18.7],[330,19.9]],THW=[[60,20.3],[70,18.8],[80,17.7],[90,16.9],[100,15.2],[110,14.9],[120,14.3],[130,13.6],[140,13.3],[150,13.0],[160,12.6],[170,12.1],[180,12.0],[190,12.1],[200,12.0],[210,11.9],[220,12.0],[230,11.5],[240,11.5],[250,11.5],[260,11.2],[270,11.2],[280,11.6],[290,12.1],[300,13.1],[310,13.7],[320,14.6],[330,15.9]];
+const ANK_MED=P(...[-18.9,379.8]),ANK_LAT=P(...[18.6,378.6]);
+const interp=(tab,y)=>{if(y<=tab[0][0])return tab[0][1];for(let i=1;i<tab.length;i++)if(y<=tab[i][0]){const a=tab[i-1],b=tab[i];return a[1]+(b[1]-a[1])*(y-a[0])/(b[0]-a[0]);}return tab[tab.length-1][1];};
+const HX=235,HY=110,A0=-3,GAP=7,LF=420,LT=382;
+const fca=y=>FCA[0]+FCA[1]*y;   // femoral mid-diaphyseal line (fitted to the traced shaft)
+const tca=y=>TCA[0]+TCA[1]*y;   // tibial mid-diaphyseal line
+const hwF=y=>interp(FHW,y),hwT=y=>interp(THW,y);
+// surface details (design frame)
+const NOTCH=toP([[-10,421],[-8,412],[-4,405],[0,403.5],[4,405],[8,412],[10,421]]);
+const ITL=toP([[44,8],[37,20],[26,38],[15,56],[8,70]]);   // intertrochanteric line to lesser trochanter
+const TUBER=(()=>{const a=[];for(let t=0;t<360;t+=30)a.push(P(-1+8*Math.sin(t*D2R),36+13*Math.cos(t*D2R)));return a;})();
+
+function buildFrontal(st){
+  const fc=st.femCora*LF, tc=st.tibCora*LT;
+  const femX=df=>p=>{let q=p;const w=clamp((p.y-(fc-14))/28,0,1);if(w>0)q=rotP(q,P(0,fc),-df*w);q=rotP(q,P(0,0),A0);return P(q.x+HX,q.y+HY);};
+  const femM=df=>{const X=femX(df),H=X(P(0,0)),K=X(P(0,LF));return angOf(sub(K,H))+180-(93-df+A0);};
+  const df=solve(femM,st.mLDFA,st.mLDFA-87);
+  const FX=femX(df),H=FX(P(0,0)),K=FX(P(0,LF)),betaF=93-df+A0;
+  const betaT=betaF-st.JLCA;
+  const tibX=dt=>{
+    const r0=betaF-93,lat=dir(betaF),down=dir(betaF-90),P0=add(K,mul(down,GAP));
+    const side=st.JLCA>=0?-1:1,piv=add(P0,mul(lat,side*26));
+    return p=>{let q=p;const w=clamp((p.y-(tc-14))/28,0,1);if(w>0)q=rotP(q,P(0,tc),-dt*w);q=rotP(q,P(0,0),r0);q=add(q,P0);if(st.JLCA)q=rotP(q,piv,-st.JLCA);return q;};
+  };
+  const tibM=dt=>{const X=tibX(dt),Pc=X(P(0,0)),A=X(P(0,LT));return angOf(sub(A,Pc))-betaT+180;};
+  const dt=solve(tibM,st.MPTA,87-st.MPTA);
+  const TX=tibX(dt),Pc=TX(P(0,0)),A=TX(P(0,LT));
+  const alphaF=angOf(sub(K,H)),alphaT=angOf(sub(A,Pc));
+  const xl=H.x+(A.x-H.x)*(K.y-H.y)/(A.y-H.y);
+  // femoral anatomical axis (proximal segment)
+  const y2=Math.min(300,fc-24);
+  const a1=FX(P(fca(90),90)),a2=FX(P(fca(y2),y2));
+  const alphaA=angOf(sub(a2,a1));
+  const Jint=lineX(a1,sub(a2,a1),K,dir(betaF));
+  const aTop=add(a1,mul(sub(a2,a1),(15-90)/(y2-90)));
+  const ticksF=[140,Math.min(290,fc-24)].map(y=>({m:FX(P(fca(y)-hwF(y),y)),l:FX(P(fca(y)+hwF(y),y)),c:FX(P(fca(y),y))}));
+  // tibial anatomical axis
+  let ty1,ty2;if(tc<230){ty1=tc+40;ty2=330;}else{ty1=25;ty2=tc-25;}
+  const t1=TX(P(tca(ty1),ty1)),t2=TX(P(tca(ty2),ty2));
+  const ticksT=[ty1+20,ty2-10].map(y=>({m:TX(P(tca(y)-hwT(y),y)),l:TX(P(tca(y)+hwT(y),y)),c:TX(P(tca(y),y))}));
+  const am1=TX(ANK_MED),am2=TX(ANK_LAT),betaA=angOf(sub(am2,am1));
+  const M={st,df,dt,fc,tc,H,K,A,Pc,betaF,betaT,alphaF,alphaT,alphaA,
+    mLDFA:alphaF+180-betaF, MPTA:alphaT-betaT+180, JLCA:st.JLCA, MAD:K.x-xl, xl,
+    HKA:alphaF-alphaT, aLDFA:alphaA+180-betaF, AMA:alphaF-alphaA, LDTA:alphaT+180-betaA,
+    a1,a2,aTop,Jint,ticksF,t1,t2,ticksT,am1,am2,
+    Cf:FX(P(0,fc)),Ct:TX(P(0,tc)),
+    fem:FEMUR.map(FX),tib:TIBIA.map(TX),fib:FIBULA.map(TX),tal:TALUS.map(TX),notch:NOTCH.map(FX),tuber:TUBER.map(TX),itl:ITL.map(FX)};
+  const lHK=len(sub(K,H)),lKA=len(sub(A,Pc));
+  M.madPerDeg=lHK*lKA/(lHK+lKA)*Math.tan(D2R);
+  return M;
+}
+function pelvis(H){
+  const pts=[];const R=HEADR+4;for(let a=-35;a>=-225;a-=19)pts.push(P(H.x+R*Math.cos(a*D2R),H.y+R*Math.sin(a*D2R)));
+  [[-38,48],[-52,86],[-76,108],[-110,102],[-128,68],[-126,10],[-134,-60],[-150,-112],[-122,-142],[-54,-138],[6,-116],[32,-76],[36,-46]].forEach(([x,y])=>pts.push(P(H.x+x,H.y+y)));
+  return PATH(pts,"bone")+`<ellipse class="hole" cx="${H.x-84}" cy="${H.y+68}" rx="17" ry="23"/>`;
+}
+
+/* ---------- sagittal model (lateral view, anterior = right) ---------- */
+const CSAG=[3.61,3.0,2.54,2.85,2.92,2.9,7.67,11.41,13.28,15.73,17.03,17.97,19.19,19.71,19.93,19.92,20.59,21.12,21.35,21.88,21.96,21.73,22.13,22.2,22.28,22.36,22.44,22.52,22.03,21.62,21.56,21.43,20.52,19.0,15.48];
+const csag=y=>{const i=(y-20)/10;if(i<=0)return CSAG[0];if(i>=CSAG.length-1)return CSAG[CSAG.length-1];const k=Math.floor(i);return CSAG[k]+(CSAG[k+1]-CSAG[k])*(i-k);};
+const SAG_FEM=toP([[-5.6,-24.3],[-9.1,-23.6],[-14.8,-20.4],[-17.8,-18.0],[-20.1,-14.9],[-22.0,-10.7],[-24.5,-2.6],[-24.8,7.2],[-24.3,10.9],[-21.3,14.5],[-20.3,16.5],[-18.9,23.4],[-18.6,34.1],[-17.5,44.5],[-17.3,67.8],[-17.9,76.0],[-16.2,77.6],[-11.8,78.3],[-9.3,79.6],[-7.0,82.6],[-3.5,88.9],[-2.4,97.4],[-0.1,102.6],[0.6,105.5],[2.0,117.5],[2.4,125.7],[4.6,138.9],[5.0,178.0],[6.2,186.7],[6.5,220.8],[5.8,228.6],[6.6,236.5],[7.1,291.4],[6.8,295.5],[5.2,304.6],[6.0,311.6],[6.1,328.2],[2.4,349.1],[0.2,353.0],[-3.9,355.5],[-5.0,356.9],[-5.7,366.3],[-6.5,369.3],[-8.8,372.4],[-13.8,376.0],[-24.2,385.2],[-29.5,390.8],[-31.4,394.2],[-32.3,397.1],[-32.4,406.2],[-31.5,410.3],[-25.0,418.0],[-20.0,420.5],[-14.9,424.2],[-7.3,425.7],[-4.0,427.9],[-2.1,428.5],[15.5,429.8],[18.7,429.4],[26.6,426.9],[31.3,422.9],[40.6,417.7],[42.5,414.6],[43.5,409.2],[43.2,396.1],[40.5,389.5],[39.4,384.4],[37.9,380.5],[36.2,367.9],[36.1,348.8],[37.2,339.2],[37.0,314.3],[38.1,302.3],[37.3,208.2],[36.1,197.9],[35.8,177.1],[34.7,168.4],[35.2,155.6],[31.7,117.2],[30.4,110.2],[28.5,104.4],[26.6,91.8],[24.7,83.4],[23.3,71.5],[23.0,35.8],[24.9,29.6],[27.3,17.5],[27.4,6.7],[27.0,1.9],[25.9,-1.5],[23.2,-5.3],[20.8,-12.4],[18.0,-16.5],[15.4,-19.2],[10.2,-22.7],[7.4,-24.0],[4.3,-24.4]]);
+const SJA=P(...[36.2,367.5]),SJP=P(...[-5.5,362.2]);   // anterior / posterior condylar-metaphyseal junctions
+const SAG_TIB=toP([[1.4,-7.4],[-0.8,-7.3],[-6.8,-6.0],[-15.8,-2.5],[-21.7,-2.2],[-25.2,-1.1],[-29.3,-0.3],[-34.6,2.5],[-38.2,7.7],[-39.6,8.7],[-42.9,9.5],[-48.0,9.5],[-51.8,10.1],[-54.1,10.9],[-60.3,16.6],[-61.6,18.8],[-61.9,21.1],[-61.1,26.1],[-60.0,27.3],[-57.7,28.6],[-56.8,31.9],[-54.7,33.6],[-54.3,37.7],[-53.8,39.0],[-52.1,40.8],[-49.9,42.1],[-48.9,45.6],[-44.8,46.7],[-42.7,48.1],[-39.9,52.4],[-38.9,54.9],[-36.4,57.9],[-35.1,63.3],[-33.0,65.5],[-32.3,66.8],[-31.7,71.5],[-27.8,77.5],[-27.5,82.8],[-25.8,84.9],[-25.2,88.6],[-23.6,93.5],[-23.4,100.1],[-21.5,104.3],[-20.5,117.0],[-19.7,122.2],[-19.7,127.3],[-18.8,131.4],[-18.9,137.7],[-18.4,143.9],[-17.1,149.7],[-16.6,154.7],[-16.6,159.8],[-15.0,177.4],[-14.7,191.1],[-14.3,194.5],[-14.4,202.1],[-14.0,205.9],[-14.0,226.5],[-13.6,233.1],[-14.3,257.9],[-15.0,262.4],[-15.5,278.8],[-16.2,283.4],[-16.5,293.0],[-17.1,296.8],[-17.4,304.3],[-18.0,308.9],[-18.4,319.3],[-19.0,323.5],[-19.7,343.8],[-20.5,348.7],[-21.3,351.2],[-23.1,358.9],[-28.3,372.4],[-29.0,375.7],[-29.2,379.6],[-29.0,380.6],[-27.3,383.4],[-27.0,390.4],[-23.9,395.9],[-21.7,396.9],[-17.9,396.6],[-15.6,396.8],[-14.7,397.2],[-12.8,399.4],[-7.9,400.7],[-6.0,400.4],[-4.0,399.5],[0.2,395.5],[0.6,394.3],[1.1,389.6],[1.7,388.3],[2.4,387.7],[7.3,387.5],[12.8,388.6],[18.2,388.3],[23.4,386.9],[24.2,385.9],[24.9,383.0],[26.0,380.5],[26.3,377.5],[26.2,375.2],[25.6,372.6],[20.0,362.5],[17.9,357.0],[17.2,351.7],[16.4,348.8],[16.3,342.9],[14.9,339.4],[15.0,332.2],[14.6,328.0],[15.0,314.0],[14.6,309.0],[15.6,273.0],[16.3,267.3],[16.8,250.1],[17.5,245.5],[18.2,219.9],[17.8,214.9],[18.0,204.9],[17.6,201.1],[17.9,188.7],[17.2,175.2],[17.6,161.2],[17.2,155.8],[17.8,133.0],[17.4,128.0],[18.9,95.0],[20.3,83.1],[20.0,77.7],[20.6,67.6],[20.2,50.4],[21.4,46.0],[21.5,42.9],[20.7,31.7],[20.9,23.7],[20.5,19.5],[20.6,14.3],[19.8,10.7],[17.0,3.0],[15.6,0.8],[12.8,-1.8],[10.9,-4.5],[9.4,-5.6],[5.6,-7.0]]);
+const SRIM=toP([[13.1,-2.5],[-51.4,9.9]]),SLIP=toP([[25.1,381.1],[-25.5,388.9]]);  // plateau rims and plafond lips: [anterior, posterior]
+const PPTA0=79.04,SLOW=429.8;
+const SAG_FIB=toP([[-52.0,22.1],[-41.8,34.3],[-23.5,57.4],[-7.1,119.3],[-0.4,199.9],[-1.7,280.1],[-4.8,330.5],[-10.4,370.6],[-8.4,391.6],[-11.4,404.8],[-17.4,405.2],[-22.4,392.4],[-22.4,369.4],[-13.7,329.5],[-9.7,279.9],[-8.4,200.1],[-15.0,120.7],[-34.3,62.6],[-55.8,45.7],[-62.5,27.9]]);
+const slopeRot=(p,th)=>{const w=clamp((50-p.y)/35,0,1);return w>0?rotP(p,P(0,0),th*w):p;};
+const SAG_FOOT=[[-20,386],[-8,384],[6,384],[16,388],[30,398],[60,412],[100,428],[128,438],[132,448],[100,452],[40,450],[-10,450],[-40,452],[-52,444],[-50,420],[-36,402],[-24,394]].map(([x,y])=>P(x,y));
+const SHX=215,SHY=105;
+function buildSag(g){
+  const fx=b=>p=>{let q=p;const w=clamp((p.y-316)/28,0,1);if(w>0)q=rotP(q,P(csag(330),330),b*w);return P(q.x+SHX,q.y+SHY);};
+  const pd=b=>{const X=fx(b),u=sub(X(P(csag(240),240)),X(P(csag(310),310))),jp=sub(X(SJP),X(SJA));return Math.abs(norm180(angOf(jp)-angOf(u)));};
+  const b=solve(pd,g.pdfa,(g.pdfa-83.5));
+  const FX=fx(b),th=PPTA0-g.ppta,rot=(g.ppta-PPTA0)-g.flex;
+  const TX=p=>FX(rotP(add(slopeRot(p,th),P(-9,SLOW+3)),P(0,398),rot));
+  const H=FX(P(0,0)),A=TX(P(0,385)),Kc=TX(P(0,0));
+  const fa1=FX(P(csag(240),240)),fa2=FX(P(csag(310),310)),fTop=FX(P(csag(130),130));
+  const jlA=FX(SJA),jlP=FX(SJP);
+  const ta1=TX(P(0,60)),ta2=TX(P(0,300));
+  const plA=TX(SRIM[0]),plP=TX(SRIM[1]);
+  const dlP=TX(SLIP[1]),dlA=TX(SLIP[0]);
+  const PDFA=Math.abs(norm180(angOf(sub(jlP,jlA))-angOf(sub(fa1,fa2))));
+  const PPTA=Math.abs(norm180(angOf(sub(plP,plA))-angOf(sub(ta2,ta1))));
+  const ADTA=Math.abs(norm180(angOf(sub(dlA,dlP))-angOf(sub(ta1,ta2))));
+  const xl=H.x+(A.x-H.x)*(Kc.y-H.y)/(A.y-H.y);
+  const rel=angOf(sub(ta2,ta1))-angOf(sub(FX(P(csag(250),250)),FX(P(csag(100),100))));
+  return {g,b,H,A,Kc,fa1,fa2,fTop,jlA,jlP,ta1,ta2,plA,plP,dlA,dlP,PDFA,PPTA,ADTA,off:xl-Kc.x,xl,rel,
+    cond:FX(P(0,398)),
+    fem:SAG_FEM.map(FX),tib:SAG_TIB.map(TX),fib:SAG_FIB.map(TX),foot:SAG_FOOT.map(TX)};
+}
+
+/* ---------- state ---------- */
+const NORMAL={mLDFA:87.5,MPTA:86.5,JLCA:1,femCora:0.78,tibCora:0.22};
+const S={sec:"axes",...NORMAL,guide:0,practice:null,coraBone:"both",
+  sag:{flex:0,pdfa:83.5,ppta:PPTA0},
+  ost:{theta:20,u:0,aca:"bisector",s:0,k:0},
+  amaOff:34,amaLen:420};
+let SAG_BASE_REL=0;
+(function initSag(){
+  // find the PDFA of the undeformed model and the reference knee angle
+  const g0={flex:0,pdfa:83.5,ppta:PPTA0};
+  const fx=p=>P(p.x+SHX,p.y+SHY);
+  const u=sub(fx(P(csag(240),240)),fx(P(csag(310),310))),jp=sub(fx(SJP),fx(SJA));
+  g0.pdfa=Math.abs(norm180(angOf(jp)-angOf(u)));
+  S.sag.pdfa=g0.pdfa;
+  SAG_BASE_REL=buildSag(g0).rel;
+})();
+const BASE_PDFA=S.sag.pdfa;
+
+const PRESETS={
+  normal:{label:"Normal",v:{}},
+  tibvar:{label:"Tibia vara",v:{MPTA:79,tibCora:0.14}},
+  femvar:{label:"Femoral varus",v:{mLDFA:95,femCora:0.74}},
+  femval:{label:"Genu valgum, femoral",v:{mLDFA:80,JLCA:0.5,femCora:0.82}},
+  tibval:{label:"Tibial valgus",v:{MPTA:94,tibCora:0.18}},
+  oa:{label:"Medial OA, lateral laxity",v:{mLDFA:88,MPTA:85.5,JLCA:6}},
+  combo:{label:"Combined varus",v:{mLDFA:92,MPTA:81,JLCA:3,femCora:0.7}},
+  comp:{label:"Compensated zig-zag",v:{mLDFA:82,MPTA:81.5,JLCA:1}}
+};
+const SAG_PRESETS={
+  normal:{label:"Normal",v:{flex:0}},
+  contract:{label:"Capsular flexion contracture",v:{flex:20}},
+  slope:{label:"Increased tibial slope",v:{flex:0,ppta:72}},
+  recurv:{label:"Anterior tibial physeal arrest",v:{flex:0,ppta:93}},
+  femflex:{label:"Distal femoral flexion deformity",v:{flex:0,pdfa:-9}},
+  femext:{label:"Distal femoral recurvatum",v:{flex:0,pdfa:9}}
+};
+
+/* ---------- classification ---------- */
+const madTxt=v=>Math.abs(v)<0.5?"through the centre":`${f1(Math.abs(v))} mm ${v>0?"medial":"lateral"}`;
+const C={
+  MAD:v=>v>15?["bad","Varus"]:v<1?["bad","Valgus"]:["ok","Normal"],
+  mLDFA:v=>v>90?["bad","Femoral varus"]:v<85?["bad","Femoral valgus"]:["ok","Normal"],
+  MPTA:v=>v<85?["bad","Tibial varus"]:v>90?["bad","Tibial valgus"]:["ok","Normal"],
+  JLCA:v=>v>2?["bad","Varus (lateral opening)"]:v<0?["bad","Valgus (medial opening)"]:["ok","Normal"],
+  aLDFA:v=>v>83?["warn","High"]:v<79?["warn","Low"]:["ok","Normal"],
+  AMA:v=>(v<5||v>9)?["warn","Outside 7 ± 2°"]:["ok","Normal"],
+  LDTA:v=>v>92?["warn","Distal tibial varus"]:v<86?["warn","Distal tibial valgus"]:["ok","Normal"],
+  HKA:v=>v>3?["warn","Varus"]:v<-3?["warn","Valgus"]:["ok","Neutral range"],
+  PDFA:v=>v<79?["bad","Flexion type"]:v>87?["bad","Extension type"]:["ok","Normal"],
+  PPTA:v=>v<77?["bad","Slope increased"]:v>84?["bad","Slope reduced (recurvatum)"]:["ok","Normal"],
+  ADTA:v=>v<78?["warn","Low"]:v>82?["warn","High"]:["ok","Normal"]
+};
+const chip=([c,t])=>`<span class="chip ${c}">${t}</span>`;
+const stc=(key,v)=>C[key](v)[0]==="ok"?"":"st-bad";
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+function matConclusion(M){
+  const madC=M.MAD>15?"varus":M.MAD<1?"valgus":"normal";
+  const fem=M.mLDFA>90?"varus":M.mLDFA<85?"valgus":null;
+  const tib=M.MPTA<85?"varus":M.MPTA>90?"valgus":null;
+  const jt=M.JLCA>2?"varus":M.JLCA<0?"valgus":null;
+  const lv=[["Femur",fem,`mLDFA ${deg(M.mLDFA)}`],["Tibia",tib,`MPTA ${deg(M.MPTA)}`],["Knee joint",jt,`JLCA ${deg(M.JLCA)}`]];
+  const ab=lv.filter(x=>x[1]);
+  if(madC==="normal"){
+    if(!ab.length)return `<b>Normal alignment.</b> MAD ${madTxt(M.MAD)} and all joint orientation angles are within range.`;
+    return `<b>Aligned, but maloriented.</b> MAD is normal (${madTxt(M.MAD)}), yet ${ab.map(x=>`${x[0].toLowerCase()} is ${x[1]} (${x[2]})`).join(" and ")}. Opposing deformities cancel out, so the knee joint line is tilted even though the limb looks straight. Treat the orientation, not just the axis.`;
+  }
+  const src=lv.filter(x=>x[1]===madC),comp=lv.filter(x=>x[1]&&x[1]!==madC);
+  let s=`<b>${cap(madC)} malalignment</b> (MAD ${madTxt(M.MAD)}). `;
+  s+=src.length?`Source: ${src.map(x=>`${x[0].toLowerCase()} (${x[2]})`).join(" + ")}.`:`No single level is out of range; the malalignment is the sum of small deviations at several levels.`;
+  if(comp.length)s+=` Partly offset by ${comp.map(x=>`${x[0].toLowerCase()} ${x[1]} (${x[2]})`).join(", ")}.`;
+  return s;
+}
+
+/* ---------- inset (magnified knee, as in the reference figure) ---------- */
+function inset(content,c,box,s,cap){
+  const tx=box.x+box.w/2,ty=box.y+box.h/2,rw=box.w/s,rh=box.h/s;
+  const sx=c.x-rw/2,sy=c.y-rh/2;
+  return `<line class="link" x1="${f(sx+rw)}" y1="${f(sy)}" x2="${box.x}" y2="${box.y}"/><line class="link" x1="${f(sx+rw)}" y1="${f(sy+rh)}" x2="${box.x}" y2="${box.y+box.h}"/>
+  <rect class="inset-src" x="${f(sx)}" y="${f(sy)}" width="${f(rw)}" height="${f(rh)}"/>
+  <g class="inset"><clipPath id="clipI"><rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6"/></clipPath>
+  <rect class="inset-bg" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6"/>
+  <g clip-path="url(#clipI)"><g transform="translate(${f(tx)} ${f(ty)}) scale(${s}) translate(${f(-c.x)} ${f(-c.y)})">${content}</g></g>
+  <rect class="inset-frame" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="6"/></g>
+  <text class="inset-cap" x="${box.x+4}" y="${box.y-7}">${cap}</text>`;
+}
+
+/* ---------- frontal overlays ---------- */
+const GUIDE=[
+  ["Hip centre","Fit concentric circles to the femoral head. Their common centre is the hip centre."],
+  ["Knee centre","Midpoint between the tibial spines, at the top of the intercondylar notch, halfway across the joint."],
+  ["Ankle centre","Midpoint of the tibial plafond, over the centre of the talar dome."],
+  ["Femoral mechanical axis","Hip centre to knee centre."],
+  ["Tibial mechanical axis","Knee centre to ankle centre."],
+  ["Limb mechanical axis","Hip centre to ankle centre (Mikulicz line). It normally passes about 8 mm medial to the knee centre."],
+  ["Femoral anatomical axis","Mark the mid-diaphysis at two levels and join the points. It runs up to the piriformis fossa and meets the knee joint line a few millimetres to 1 cm medial to the knee centre."],
+  ["Tibial anatomical axis","Mid-diaphyseal line of the tibia. It lies just medial to, and parallel with, the tibial mechanical axis, so in the frontal plane the two are interchangeable."],
+  ["Joint orientation lines","Femoral condylar line (tangent to both distal condyles) and tibial plateau line (across the subchondral plateau). These are the reference lines for mLDFA, MPTA and JLCA."]
+];
+function ticks(arr){return arr.map(t=>L(t.m,t.l,"anatS")+DOT(t.c,"pt",3.2)).join("");}
+function frontalOverlay(M,sec){
+  let o="";
+  const H=M.H,K=M.K,A=M.A,Pc=M.Pc;
+  const lblR=(p,s,c="lbl",dx=12)=>T(add(p,P(dx,0)),s,c,"start");
+  const lblL=(p,s,c="lbl",dx=12)=>T(sub(p,P(dx,0)),s,c,"end");
+  const jlF=(l=60,c="jl")=>LD(K,M.betaF,l,l,c), jlT=(l=55,c="jl")=>LD(Pc,M.betaT,l,l,c);
+  if(sec==="axes"){
+    if(S.practice){
+      const pr=S.practice;
+      pr.clicks.forEach((ck,i)=>{const tgt=M[pr.targets[i].key];o+=L(ck,tgt,"err")+DOT(tgt,"pt",4.5)+`<path class="click" d="M${f(ck.x-6)},${f(ck.y-6)}L${f(ck.x+6)},${f(ck.y+6)}M${f(ck.x+6)},${f(ck.y-6)}L${f(ck.x-6)},${f(ck.y+6)}"/>`;});
+      return o;
+    }
+    const g=S.guide;
+    if(g>=0)o+=`<circle class="tmpl" cx="${f(H.x)}" cy="${f(H.y)}" r="${HEADR-3}"/><circle class="tmpl" cx="${f(H.x)}" cy="${f(H.y)}" r="${HEADR+2}"/>`+DOT(H)+(g===0?lblR(add(H,P(18,-30)),"Hip centre"):"");
+    if(g>=1)o+=DOT(K)+(g===1?lblR(add(K,P(46,-14)),"Knee centre"):"");
+    if(g>=2)o+=DOT(A)+(g===2?lblR(add(A,P(26,0)),"Ankle centre"):"");
+    if(g>=3)o+=L(H,K,"mechS")+(g===3?lblL(add(H,mul(sub(K,H),0.45)),"Femoral mech. axis","lbl m",8):"");
+    if(g>=4)o+=L(Pc,A,"mechS")+(g===4?lblL(add(Pc,mul(sub(A,Pc),0.5)),"Tibial mech. axis","lbl m",8):"");
+    if(g>=5)o+=L(H,A,"mech")+(g===5?lblR(add(K,P(48,40)),`passes ${madTxt(M.MAD)}`,"lbl m",0):"");
+    if(g>=6){o+=L(M.aTop,M.Jint,"anat");if(g===6)o+=ticks(M.ticksF)+lblR(add(M.ticksF[0].l,P(6,-10)),"mid-diaphysis","lbl a",4)+lblR(add(M.Jint,P(-4,26)),`${f1(len(sub(M.Jint,K)))} mm medial`,"lbl a",-40);}
+    if(g>=7){o+=EL(M.t1,M.t2,0.45,0.25,"anat");if(g===7)o+=ticks(M.ticksT);}
+    if(g>=8)o+=jlF(62)+jlT(58);
+    return o;
+  }
+  if(sec==="dfva"){
+    const X=lineX(H,sub(K,H),M.a1,sub(M.a2,M.a1));
+    o+=L(H,K,"mechS")+L(M.aTop,M.Jint,"anat")+jlF(70)+DOT(H)+DOT(K);
+    if(X)o+=ARC(X,M.alphaF+180,M.alphaA+180,70,"c","",0)+T(add(X,P(-16,-74)),`AMA ${deg(M.AMA)}`,"lbl val c","end")+T(add(X,P(-16,-56)),"distal femoral valgus angle","lbl c","end");
+    o+=ARC(K,M.alphaF+180,M.betaF,30,"m","",0)+T(add(K,P(52,-34)),`mLDFA ${deg(M.mLDFA)}`,"lbl val m","start");
+    o+=ARC(M.Jint,M.alphaA+180,M.betaF,48,"a","",0)+T(add(M.Jint,P(-14,-58)),`aLDFA ${deg(M.aLDFA)}`,"lbl val a","end");
+    return o;
+  }
+  if(sec==="mad"){
+    const lat=dir(90),m1=P(K.x-1,K.y),m15=P(K.x-15,K.y);
+    o+=L(H,A,"mech")+DOT(H)+DOT(K,"pt ink",3.6)+DOT(A);
+    o+=L(m1,m15,"zone");
+    if(Math.abs(M.MAD)>1.2)o+=`<line class="madline" x1="${f(M.xl)}" y1="${f(K.y)}" x2="${f(K.x)}" y2="${f(K.y)}" marker-start="url(#arw)" marker-end="url(#arw)"/>`;
+    o+=T(P(Math.min(K.x,M.xl)-40,K.y-30),`MAD ${madTxt(M.MAD)}`,"lbl val "+(C.MAD(M.MAD)[0]==="ok"?"m":"st-bad"),"end");
+    o+=T(P(Math.min(K.x,M.xl)-40,K.y-12),"green = normal zone","lbl dim","end");
+    if(sec==="mad")return o;
+  }
+  if(sec==="mldfa"){
+    o+=L(H,K,"mechS")+jlF(70)+DOT(H)+DOT(K);
+    if(sec==="mldfa")o+=LD(K,M.alphaF+180-87,0,70,"ref")+T(add(K,mul(dir(M.alphaF+180-87),74)),"87° reference","lbl dim","start",-6);
+    o+=ARC(K,M.alphaF+180,M.betaF,32,stc("mLDFA",M.mLDFA)||"m","",0)+T(add(K,P(46,-40)),`mLDFA ${deg(M.mLDFA)}`,"lbl val "+(stc("mLDFA",M.mLDFA)||"m"),"start");
+    if(sec==="mldfa")return o;
+  }
+  if(sec==="mpta"){
+    o+=L(Pc,A,"mechS")+jlT(66)+DOT(Pc)+DOT(A);
+    if(sec==="mpta")o+=LD(Pc,M.alphaT+87-180,0,70,"ref")+T(add(Pc,mul(dir(M.alphaT+87-180),74)),"87° reference","lbl dim","end",-6);
+    o+=ARC(Pc,M.alphaT,M.betaT-180,32,stc("MPTA",M.MPTA)||"m","",0)+T(add(Pc,P(-46,46)),`MPTA ${deg(M.MPTA)}`,"lbl val "+(stc("MPTA",M.MPTA)||"m"),"end");
+    if(sec==="mpta")return o;
+  }
+  if(sec==="jlca"){
+    const lf=dir(M.betaF),lt=dir(M.betaT);
+    const fM=sub(K,mul(lf,42)),fL=add(K,mul(lf,42)),tM=sub(Pc,mul(lt,42)),tL=add(Pc,mul(lt,42));
+    o+=`<path class="wedge ${stc("JLCA",M.JLCA)||"j"}" style="opacity:.28" d="M${f(fM.x)},${f(fM.y)}L${f(fL.x)},${f(fL.y)}L${f(tL.x)},${f(tL.y)}L${f(tM.x)},${f(tM.y)}Z"/>`;
+    o+=jlF(95)+jlT(95);
+    const conv=M.JLCA>0.05?"converging medially":M.JLCA<-0.05?"converging laterally":"parallel";
+    o+=T(add(Pc,P(0,58)),`JLCA ${deg(M.JLCA)}`,"lbl val big "+(stc("JLCA",M.JLCA)||"j"),"middle")+T(add(Pc,P(0,76)),conv,"lbl dim","middle");
+    return o;
+  }
+  if(sec==="cora"){
+    o+=L(H,A,"mech faint");
+    const bones=S.coraBone==="both"?["femur","tibia"]:[S.coraBone];
+    bones.forEach(b=>{
+      const prox=b==="femur"?H:Pc,dist=b==="femur"?K:A,Cp=b==="femur"?M.Cf:M.Ct,mag=b==="femur"?M.df:M.dt;
+      const dp=sub(Cp,prox),dd=sub(Cp,dist);
+      o+=L(prox,add(Cp,mul(dp,0.45/ (len(dp)/200||1))),"mechS");
+      o+=L(dist,add(Cp,mul(dd,0.45/(len(dd)/200||1))),"seg2");
+      o+=DOT(prox)+DOT(dist);
+      if(Math.abs(mag)>0.4){
+        const aP=angOf(dp),aD=angOf(sub(dist,Cp));
+        o+=ARC(Cp,aP,aD,34,"c","",0);
+        const bis=(aP+aD)/2+90;
+        o+=LD(Cp,bis,48,48,"bis");
+        o+=DOT(Cp,"cora",6)+T(add(Cp,P(Cp.x>prox.x?18:-18,-14)),`CORA ${f1(Math.abs(mag))}°`,"lbl val c",Cp.x>prox.x?"start":"end");
+      }else{
+        o+=T(add(Cp,P(16,0)),`${b}: no angular deformity`,"lbl dim","start");
+      }
+    });
+    o+=jlF(55)+jlT(50);
+    return o;
+  }
+  return o;
+}
+function renderFrontal(st){
+  const M=buildFrontal(st);
+  const bones=pelvis(M.H)+PATH(M.fib)+PATH(M.tal)+PATH(M.tib)+PATH(M.tuber,"detail")+PATH(M.fem)+PATH(M.notch,"notch")+PATH(M.itl,"detail",false);
+  const ov=frontalOverlay(M,S.sec);
+  const content=bones+ov;
+  const box={x:400,y:clamp(M.K.y-125,70,690),w:172,h:250};
+  let s=`<g>${content}</g>`+inset(content,P(M.K.x,M.K.y+3),box,2.15,"Knee, magnified");
+  s+=`<text class="side" x="72" y="970">← Medial</text><text class="side" x="372" y="970" text-anchor="end">Lateral →</text>`;
+  return {svg:s,M};
+}
+
+/* ---------- sagittal render ---------- */
+function renderSag(){
+  const M=buildSag(S.sag);
+  let b=PATH(M.fib,"bone soft")+PATH(M.foot,"bone")+PATH(M.tib)+PATH(M.fem);
+  let o="";
+  o+=L(M.H,M.A,"mech")+DOT(M.H)+DOT(M.A)+DOT(M.Kc,"pt ink",3.6);
+  // femur
+  const If=lineX(M.fa2,sub(M.fa2,M.fa1),M.jlA,sub(M.jlP,M.jlA));
+  o+=L(M.fTop,If||M.fa2,"anat")+EL(M.jlA,M.jlP,0.5,0.6,"jl");
+  if(If)o+=ARC(If,angOf(sub(M.fa1,M.fa2)),angOf(sub(M.jlP,M.jlA)),30,stc("PDFA",M.PDFA)||"a","",0)+T(add(If,P(-40,-42)),`PDFA ${deg(M.PDFA)}`,"lbl val "+(stc("PDFA",M.PDFA)||"a"),"end");
+  // tibia
+  const It=lineX(M.ta1,sub(M.ta2,M.ta1),M.plA,sub(M.plP,M.plA));
+  o+=EL(M.ta1,M.ta2,0.32,0.38,"anat")+EL(M.plA,M.plP,0.6,0.7,"jl");
+  if(It)o+=ARC(It,angOf(sub(M.ta2,M.ta1)),angOf(sub(M.plP,M.plA)),30,stc("PPTA",M.PPTA)||"a","",0)+T(add(It,P(-44,46)),`PPTA ${deg(M.PPTA)}`,"lbl val "+(stc("PPTA",M.PPTA)||"a"),"end");
+  const Id=lineX(M.ta1,sub(M.ta2,M.ta1),M.dlP,sub(M.dlA,M.dlP));
+  o+=EL(M.dlP,M.dlA,0.8,0.9,"jl");
+  if(Id)o+=ARC(Id,angOf(sub(M.ta1,M.ta2)),angOf(sub(M.dlA,M.dlP)),26,"a","",0)+T(add(Id,P(40,-34)),`ADTA ${deg(M.ADTA)}`,"lbl val a","start");
+  // MA offset at knee
+  if(Math.abs(M.off)>1.2)o+=`<line class="madline" x1="${f(M.Kc.x)}" y1="${f(M.Kc.y)}" x2="${f(M.xl)}" y2="${f(M.Kc.y)}" marker-end="url(#arw)"/>`;
+  o+=T(P(Math.min(M.Kc.x,M.xl)-36,M.Kc.y-22),`axis ${f1(Math.abs(M.off))} mm ${M.off>=0?"anterior":"posterior"}`,"lbl val "+(M.off>=0?"m":"st-bad"),"end");
+  const content=b+o;
+  const box={x:410,y:clamp(M.Kc.y-130,70,680),w:168,h:250};
+  let s=`<g>${content}</g>`+inset(content,P(M.Kc.x,M.Kc.y-8),box,2,"Knee, magnified");
+  s+=`<text class="side" x="0" y="1000">← Posterior</text><text class="side" x="390" y="1000" text-anchor="end">Anterior →</text>`;
+  return {svg:s,M};
+}
+
+/* ---------- osteotomy model ---------- */
+function buildOst(o){
+  const top=P(270,60),Cc=P(270,410),th=o.theta,Ld=390,hw=22;
+  const bottom=add(Cc,mul(dir(-th),Ld));
+  let O,cutLat,down;
+  if(o.u<=0){O=add(Cc,P(0,o.u));cutLat=P(1,0);down=P(0,1);}
+  else{O=add(Cc,mul(dir(-th),o.u));cutLat=dir(90-th);down=dir(-th);}
+  const bis=dir(90-th/2);
+  const ACA=o.aca==="bisector"?add(Cc,mul(bis,o.s*hw/Math.cos(th/2*D2R))):add(O,mul(cutLat,o.s*hw));
+  const prox=o.u<=0?[top,O]:[top,Cc,O],dist=o.u<=0?[O,Cc,bottom]:[O,bottom];
+  const Rk=k=>p=>rotP(p,ACA,k*th);
+  const R=Rk(o.k),R1=Rk(1);
+  const Pm=sub(O,mul(cutLat,hw)),Pl=add(O,mul(cutLat,hw));
+  const sep=(Rf,p)=>dotp(sub(Rf(p),p),down);
+  const fin={m:sep(R1,Pm),l:sep(R1,Pl)};
+  const trans=R1(bottom).x-top.x;
+  const cutShift=dotp(sub(R1(O),O),cutLat);
+  let rule;
+  if(Math.abs(o.u)<8)rule=1;else if(o.aca==="bisector")rule=2;else rule=3;
+  return {top,Cc,bottom,O,cutLat,down,bis,ACA,prox,dist,R,R1,Pm,Pl,fin,trans,cutShift,rule,hw};
+}
+function frag(pts){const d="M"+pts.map(p=>`${f(p.x)},${f(p.y)}`).join(" L");return `<path class="fo" d="${d}"/><path class="fbn" d="${d}"/><path class="fcn" d="${d}"/>`;}
+function renderOst(){
+  const o=S.ost,M=buildOst(o);
+  const distR=M.dist.map(M.R);
+  let s=`<text class="side" x="30" y="905">← Medial (concave side)</text><text class="side" x="520" y="905" text-anchor="end">Lateral (convex side) →</text>`;
+  s+=`<g filter="url(#boneShade)">${frag(M.prox)}</g><g filter="url(#boneShade)">${frag(distR)}</g>`;
+  // wedge at the cut
+  const Dm=M.R(M.Pm),Dl=M.R(M.Pl);
+  const sm=dotp(sub(Dm,M.Pm),M.down),sl=dotp(sub(Dl,M.Pl),M.down);
+  if(o.k>0.01){
+    const poly=(a,c)=>`<path class="${c}" d="M${a.map(p=>`${f(p.x)},${f(p.y)}`).join("L")}Z"/>`;
+    if(sm*sl>=0)s+=poly([M.Pm,M.Pl,Dl,Dm],(sm+sl)>=0?"gapw":"overw");
+    else{const t=sm/(sm-sl),X=add(M.Pm,mul(sub(M.Pl,M.Pm),t));s+=poly([M.Pm,X,Dm],sm>0?"gapw":"overw")+poly([X,M.Pl,Dl],sl>0?"gapw":"overw");}
+  }
+  // axis lines
+  s+=L(P(M.top.x,30),P(M.top.x,880),"mech");
+  const a=distR[distR.length-2],b=distR[distR.length-1],dd=sub(b,a),u=mul(dd,1/len(dd));
+  s+=L(sub(b,mul(u,900)),add(b,mul(u,40)),"seg2");
+  s+=LD(M.Cc,90-o.theta/2,90,90,"bis")+T(add(M.Cc,mul(dir(90-o.theta/2),96)),"bisector","lbl c","start");
+  s+=LD(M.O,angOf(M.cutLat),46,46,"cut");
+  s+=DOT(M.Cc,"cora",6)+T(add(M.Cc,P(-16,-12)),"CORA","lbl val c","end");
+  s+=`<circle class="aca" cx="${f(M.ACA.x)}" cy="${f(M.ACA.y)}" r="9"/>`+DOT(M.ACA,"pt",3)+T(add(M.ACA,P(14,22)),"ACA","lbl val a","start");
+  s+=T(add(M.O,mul(M.cutLat,-58)),"osteotomy","lbl","end");
+  s+=T(P(M.top.x+12,40),"proximal segment axis","lbl m","start");
+  s+=T(add(b,P(12,-10)),"distal segment axis","lbl","start");
+  if(o.k>0.99){
+    const t=M.trans;
+    if(Math.abs(t)>0.8){const y=820;s+=`<line class="madline" x1="${M.top.x}" y1="${y}" x2="${f(M.top.x+t)}" y2="${y}" marker-start="url(#arw)" marker-end="url(#arw)"/>`+T(P(M.top.x+t/2,y+22),`translation ${f1(Math.abs(t))} mm`,"lbl val st-bad","middle");}
+    else s+=T(P(M.top.x+16,830),"axes collinear","lbl val m","start");
+  }
+  return {svg:s,M};
+}
+
+/* ---------- lesson content ---------- */
+const SECTIONS=[
+  {id:"axes",n:"A",short:"Axes"},
+  {id:"dfva",n:"B",short:"Distal femoral valgus angle"},
+  {id:"mad",n:"0",short:"MAD"},
+  {id:"mldfa",n:"1",short:"Femur: mLDFA"},
+  {id:"mpta",n:"2",short:"Tibia: MPTA"},
+  {id:"jlca",n:"3",short:"Joint: JLCA"},
+  {id:"cora",n:"4",short:"Frontal plane"},
+  {id:"sag",n:"5",short:"Sagittal plane"},
+  {id:"ost",n:"6",short:"Osteotomy rules"}
+];
+function rng(bind,label,min,max,step,val,unit,note){
+  return `<div class="ctl"><label for="r_${bind}">${label}</label><output data-out="${bind}">${f1(val)}${unit}</output>
+  <input type="range" id="r_${bind}" data-bind="${bind}" data-unit="${unit}" min="${min}" max="${max}" step="${step}" value="${val}">${note?`<small>${note}</small>`:""}</div>`;
+}
+function simBlock(extra=""){
+  return `<div class="sim"><h3>Deformity simulator</h3>
+  <div class="presets">${Object.entries(PRESETS).map(([k,p])=>`<button class="btn" data-act="preset" data-v="${k}">${p.label}</button>`).join("")}</div>
+  ${rng("mLDFA","Femur: mLDFA",76,100,0.5,S.mLDFA,"°","Above 90° = femoral varus, below 85° = femoral valgus")}
+  ${rng("MPTA","Tibia: MPTA",74,100,0.5,S.MPTA,"°","Below 85° = tibial varus, above 90° = tibial valgus")}
+  ${rng("JLCA","Knee joint: JLCA",-8,10,0.5,S.JLCA,"°","Positive = converges medially (lateral side opens)")}
+  ${extra}</div>`;
+}
+const LESSON={
+  axes:()=>({t:"Mechanical and anatomical axes",s:"Draw these on every standing long-leg AP film before measuring anything.",
+    b:`<p>A <b>mechanical axis</b> is a straight line joining two joint centres. An <b>anatomical axis</b> is the mid-diaphyseal line of a bone. MAT is done with mechanical axes; anatomical axes matter for intramedullary instruments and when a joint centre is not on the film.</p>
+    <h3>Trace it yourself</h3>
+    <ol class="guide" id="guide">${GUIDE.map((g,i)=>`<li data-act="guide" data-v="${i}" tabindex="0"><span><b>${g[0]}</b>${g[1]}</span></li>`).join("")}</ol>
+    <div class="row"><button class="btn" data-act="gprev">Previous</button><button class="btn primary" data-act="gnext">Next line</button><button class="btn" data-act="gall">Show all</button></div>
+    <div class="key">In normal stance the femoral and tibial mechanical axes each lie about 3° from vertical, the whole-limb mechanical axis is about 3° from vertical, and the knee joint line is roughly parallel to the ground.</div>
+    <h3>Practise locating joint centres</h3>
+    <p>Click on the film where you think each centre is. Your error is shown in millimetres.</p>
+    <div class="row"><button class="btn primary" data-act="practice">Start practice</button></div>
+    <div id="practiceFb"></div>
+    ${simBlock()}`}),
+  dfva:()=>({t:"Distal femoral valgus angle",s:"The angle between the femoral mechanical and anatomical axes.",
+    b:`<p>The femoral anatomical axis starts at the piriformis fossa, lateral to the hip centre, and runs down the shaft. The mechanical axis starts at the hip centre. Both end at the knee, so they diverge by the <b>anatomical–mechanical angle (AMA)</b>, which surgeons call the distal femoral valgus angle: <b>7° ± 2°</b> (5–7° is the figure most quoted).</p>
+    <p>Because both lines meet the same distal femoral joint line, the AMA also equals the difference between the two distal femoral angles:</p>
+    <div class="key">mLDFA 87° (85–90) − aLDFA 81° (79–83) ≈ 6–7°</div>
+    <h3>How to draw it</h3>
+    <ol><li>Draw the femoral mechanical axis, hip centre to knee centre.</li><li>Draw the femoral anatomical axis through two mid-diaphyseal points.</li><li>Measure the angle where they cross, just above the knee.</li></ol>
+    <h3>Why it matters</h3>
+    <ul><li>TKA: the intramedullary rod follows the anatomical axis, so the distal femoral cut is set at the patient's AMA (typically 5–7° valgus) to make it perpendicular to the mechanical axis.</li>
+    <li>Distal femoral osteotomy: when the hip is not on the film, use the aLDFA (81°) instead of the mLDFA.</li>
+    <li>The angle is individual: it is larger with a long femoral neck offset or coxa vara and in short femurs, smaller with coxa valga and long femurs. Measure it; do not assume it.</li></ul>
+    <div class="sim"><h3>How offset and length change the angle</h3>
+    ${rng("amaOff","Hip centre to anatomical axis line",20,60,1,S.amaOff," mm","Horizontal offset measured at the level of the hip centre")}
+    ${rng("amaLen","Femoral mechanical length",340,520,5,S.amaLen," mm")}
+    <div id="amaOut" class="verdict"></div></div>
+    ${simBlock()}`}),
+  mad:()=>({t:"Step 0: Mechanical axis deviation (MAD)",s:"Is the limb malaligned, and in which direction?",
+    b:`<ol><li>Mark the hip centre and the ankle centre.</li><li>Join them: this is the mechanical axis of the whole limb.</li><li>Measure the perpendicular distance from the knee centre to this line.</li></ol>
+    <div class="key">Normal MAD is <b>8 ± 7 mm medial</b> (1 to 15 mm). More than 15 mm medial = <b>varus</b> malalignment (bow legs). Less than 1 mm medial, or lateral to the centre = <b>valgus</b> malalignment (knock knees).</div>
+    <p>MAD tells you <i>that</i> the limb is malaligned. It does not tell you <i>where</i>. Steps 1 to 3 localise the source.</p>
+    <p>Use a full-length standing film with the patella facing forward and a calibration marker; rotation of the limb changes the apparent MAD.</p>
+    ${simBlock()}`}),
+  mldfa:()=>({t:"Step 1: Femur check (mLDFA)",s:"Is the deformity in the femur?",
+    b:`<ol><li>Draw the femoral mechanical axis, hip centre to knee centre.</li><li>Draw the femoral condylar line, tangent to the most distal points of both condyles.</li><li>Measure the <b>lateral</b> angle between them: the mechanical lateral distal femoral angle.</li></ol>
+    <div class="key">mLDFA normal <b>87°</b> (85–90). Above 90° = femoral varus. Below 85° = femoral valgus.</div>
+    <p>If the mLDFA is abnormal in the same direction as the MAD, the femur contributes to the malalignment. If it is abnormal in the opposite direction, it is partly compensating.</p>
+    <p>The grey dotted line on the film shows where a normal 87° condylar line would sit, so you can see the deviation directly.</p>
+    ${simBlock()}`}),
+  mpta:()=>({t:"Step 2: Tibia check (MPTA)",s:"Is the deformity in the tibia?",
+    b:`<ol><li>Draw the tibial mechanical axis, knee centre to ankle centre.</li><li>Draw the tibial plateau line across the subchondral bone of both plateaus.</li><li>Measure the <b>medial</b> angle between them: the medial proximal tibial angle.</li></ol>
+    <div class="key">MPTA normal <b>87°</b> (85–90). Below 85° = tibial varus (for example Blount disease, or proximal tibia vara with medial OA). Above 90° = tibial valgus.</div>
+    <p>For the distal tibia, also check the LDTA (89°, 86–92) so you don't miss an ankle-level deformity.</p>
+    ${simBlock()}`}),
+  jlca:()=>({t:"Step 3: Knee joint check (JLCA)",s:"Is the problem inside the joint?",
+    b:`<ol><li>Draw the femoral condylar line.</li><li>Draw the tibial plateau line.</li><li>Measure the angle between them: the joint line convergence angle.</li></ol>
+    <div class="key teal">JLCA normal <b>0 to 2°</b>, converging medially. More than 2° converging medially (lateral side opens) adds <b>varus</b>: medial cartilage or bone loss, or lateral collateral laxity. Converging laterally (medial side opens) adds <b>valgus</b>: lateral compartment loss or medial laxity.</div>
+    <p>Each degree of angulation at the knee moves the axis by roughly <b id="mpd">3–4 mm</b> of MAD in this limb, so a 5° JLCA alone can make a straight-boned limb look clearly varus.</p>
+    <p>Stress or supine films separate cartilage loss from ligament laxity. When planning an osteotomy, account for the JLCA; otherwise the joint component is over-corrected by bone.</p>
+    ${simBlock()}`}),
+  cora:()=>({t:"Step 4: Frontal plane malalignment",s:"Put Steps 0 to 3 together, then find the CORA.",
+    b:`<p><b>Malalignment</b> is an abnormal MAD. <b>Malorientation</b> is an abnormal joint orientation angle. A limb can be aligned but maloriented when deformities cancel out (try the compensated zig-zag preset).</p>
+    <h3>Finding the CORA</h3>
+    <ol><li>Femur: draw the proximal segment axis from the hip centre (normal mLPFA 90°) and the distal segment axis from the knee centre at a normal mLDFA of 87°.</li>
+    <li>Tibia: draw the proximal segment axis from the knee centre at a normal MPTA of 87° and the distal segment axis from the ankle centre at a normal LDTA of 89°.</li>
+    <li>Where each pair crosses is the <b>CORA</b> (centre of rotation of angulation). The angle between them is the magnitude; the transverse <b>bisector</b> through the CORA is where an angulation axis can sit without causing translation.</li></ol>
+    <div class="key purple">If the CORA sits at the visible apex of the bone, the deformity is a single angulation. If it lies away from the apex or outside the bone, suspect an added translation or a second deformity.</div>
+    <div class="sim"><h3>Show CORA for</h3>
+      <div class="seg" role="group" aria-label="Bone">${["femur","tibia","both"].map(b=>`<button data-act="corabone" data-v="${b}" aria-pressed="${S.coraBone===b}">${cap(b)}</button>`).join("")}</div>
+      ${rng("femCora","Femoral CORA level (from hip)",0.45,0.86,0.01,S.femCora,"","Fraction of femoral length")}
+      ${rng("tibCora","Tibial CORA level (from knee)",0.08,0.75,0.01,S.tibCora,"","Fraction of tibial length")}
+    </div>
+    ${simBlock()}`}),
+  sag:()=>({t:"Step 5: Sagittal plane malalignment",s:"Standing lateral long-leg film, knee in maximum extension.",
+    b:`<p>The femoral shaft bows anteriorly, so the sagittal plane is analysed mainly with <b>anatomical</b> (mid-diaphyseal) axes. The sagittal mechanical axis, hip centre to ankle centre, normally passes slightly <b>anterior</b> to the knee centre in extension, so the knee locks without quadriceps effort.</p>
+    <ol><li>Femur: draw the distal mid-diaphyseal line and the line joining the anterior and posterior condylar–metaphyseal junctions. Posterior angle = <b>aPDFA 83°</b> (79–87).</li>
+    <li>Tibia: draw the tibial mid-diaphyseal line and the plateau line. Posterior angle = <b>aPPTA 81°</b> (77–84), about 9° of posterior slope.</li>
+    <li>Distal tibia: anterior angle to the plafond line = <b>aADTA 80°</b> (78–82).</li>
+    <li>Check where the sagittal mechanical axis passes relative to the knee centre.</li></ol>
+    <div class="key">Flexion deformity with normal PDFA and PPTA = soft-tissue (capsular) contracture. Abnormal PDFA = femoral source. PPTA below 77° = increased slope (flexion type); above 84° = reduced or reversed slope causing recurvatum, as after anterior tibial physeal arrest.</div>
+    <div class="sim"><h3>Sagittal simulator</h3>
+    <div class="presets">${Object.entries(SAG_PRESETS).map(([k,p])=>`<button class="btn" data-act="sagpreset" data-v="${k}">${p.label}</button>`).join("")}</div>
+    ${rng("sag.flex","Knee position (soft tissue)",-15,30,1,S.sag.flex,"°","Positive = flexion contracture, negative = hyperextension")}
+    ${rng("sag.pdfa","Distal femur: PDFA",68,98,0.5,S.sag.pdfa,"°")}
+    ${rng("sag.ppta","Proximal tibia: PPTA",66,96,0.5,S.sag.ppta,"°")}
+    </div>`}),
+  ost:()=>({t:"Step 6: The three rules of osteotomy",s:"Where you cut and where you hinge decide whether the axis lines up.",
+    b:`<p>The <b>ACA</b> (axis of correction of angulation) is the hinge the distal fragment rotates around. The <b>osteotomy</b> is where the bone is cut. They do not have to be at the same place.</p>
+    <ol><li><b>Rule 1.</b> Osteotomy and ACA both through the CORA: the bone realigns with no translation.</li>
+    <li><b>Rule 2.</b> ACA through the CORA, osteotomy at a different level: the axis realigns, and the fragments angulate <i>and translate</i> at the osteotomy. That translation is required, not an error.</li>
+    <li><b>Rule 3.</b> Osteotomy and ACA away from the CORA: the angle is corrected but a new <b>translational deformity</b> appears; the axis lines end up parallel but offset.</li></ol>
+    <div class="row">${[1,2,3].map(r=>`<button class="btn" data-act="rule" data-v="${r}">Load Rule ${r}</button>`).join("")}</div>
+    <div class="sim"><h3>Plan the correction</h3>
+    ${rng("ost.theta","Deformity (varus) at CORA",5,35,1,S.ost.theta,"°")}
+    ${rng("ost.u","Osteotomy level relative to CORA",-260,240,2,S.ost.u," mm","Negative = proximal to CORA, positive = distal")}
+    <div class="ctl"><label>ACA placed</label><span></span></div>
+    <div class="seg" role="group" aria-label="ACA level"><button data-act="aca" data-v="bisector" aria-pressed="${S.ost.aca==="bisector"}">On the bisector at CORA</button><button data-act="aca" data-v="osteotomy" aria-pressed="${S.ost.aca==="osteotomy"}">At the osteotomy level</button></div>
+    ${rng("ost.s","ACA across the bone",-1,1,0.05,S.ost.s,"","−1 concave (medial) cortex, 0 centre, +1 convex (lateral) cortex")}
+    <div class="row"><button class="btn primary" data-act="correct">Correct the deformity</button><button class="btn" data-act="ostreset">Reset</button></div>
+    </div>
+    <div class="key">ACA on the <b>convex</b> cortex = opening wedge. On the <b>concave</b> cortex = closing wedge. In the middle of the bone = neutral wedge (opens one side, closes the other). Opening wedges lengthen; closing wedges shorten.</div>`})
+};
+
+/* ---------- readouts ---------- */
+function readFrontal(M,hl){
+  const rows=[["MAD","Mechanical axis deviation",madTxt(M.MAD),C.MAD(M.MAD),"mad"],
+    ["mLDFA","Femur",deg(M.mLDFA),C.mLDFA(M.mLDFA),"mldfa"],
+    ["MPTA","Tibia",deg(M.MPTA),C.MPTA(M.MPTA),"mpta"],
+    ["JLCA","Knee joint",deg(M.JLCA),C.JLCA(M.JLCA),"jlca"],
+    ["aLDFA","Femur, anatomical",deg(M.aLDFA),C.aLDFA(M.aLDFA),"dfva"],
+    ["AMA","Distal femoral valgus angle",deg(M.AMA),C.AMA(M.AMA),"dfva"],
+    ["LDTA","Distal tibia",deg(M.LDTA),C.LDTA(M.LDTA),"x"],
+    ["HKA","Mech. femorotibial angle",`${f1(Math.abs(M.HKA))}° ${M.HKA>=0?"varus":"valgus"}`,C.HKA(M.HKA),"x"]];
+  return `<h3>Measurements on this film</h3><table class="read"><tr><th>Measure</th><th>Value</th><th>Reading</th></tr>${rows.map(r=>`<tr class="${r[4]===hl?"hl":""}"><td><b>${r[0]}</b><br><small>${r[1]}</small></td><td class="n">${r[2]}</td><td>${chip(r[3])}</td></tr>`).join("")}</table>
+  <div class="verdict">${matConclusion(M)}</div>`;
+}
+function flowFrontal(M){
+  const it=[["MAD",madTxt(M.MAD),C.MAD(M.MAD)],["mLDFA (femur)",deg(M.mLDFA),C.mLDFA(M.mLDFA)],["MPTA (tibia)",deg(M.MPTA),C.MPTA(M.MPTA)],["JLCA (joint)",deg(M.JLCA),C.JLCA(M.JLCA)]];
+  let s=`<h3>MAT, live</h3><ol class="flow">${it.map(i=>`<li><span>${i[0]}: <b>${i[1]}</b></span>${chip(i[2])}</li>`).join("")}</ol>`;
+  const fm=Math.abs(M.df),tm=Math.abs(M.dt);
+  s+=`<table class="read"><tr><th>CORA</th><th>Magnitude</th><th>Level</th></tr>
+  <tr><td>Femur</td><td class="n">${fm<0.4?"none":`${f1(fm)}° ${M.df>0?"varus":"valgus"}`}</td><td class="n">${f0(LF-M.fc)} mm above the joint</td></tr>
+  <tr><td>Tibia</td><td class="n">${tm<0.4?"none":`${f1(tm)}° ${M.dt>0?"varus":"valgus"}`}</td><td class="n">${f0(M.tc)} mm below the joint</td></tr></table>
+  <p><small>The magnitude at the CORA can differ slightly from the joint-angle deviation, because the knee centre moves when the bone angulates.</small></p>`;
+  return s+`<div class="verdict">${matConclusion(M)}</div>`;
+}
+function readSag(M){
+  const kf=-(M.rel-SAG_BASE_REL);
+  const rows=[["aPDFA","Distal femur",deg(M.PDFA),C.PDFA(M.PDFA)],["aPPTA","Proximal tibia",deg(M.PPTA),C.PPTA(M.PPTA)],["aADTA","Distal tibia",deg(M.ADTA),C.ADTA(M.ADTA)],
+    ["Knee","Position vs normal",`${f1(Math.abs(kf))}° ${kf>=0?"flexion":"extension"}`,Math.abs(kf)<3?["ok","Normal"]:kf>0?["bad","Flexion"]:["bad","Recurvatum"]],
+    ["Axis","Sagittal mech. axis at knee",`${f1(Math.abs(M.off))} mm ${M.off>=0?"anterior":"posterior"}`,M.off>=0?(M.off>20?["warn","Far anterior"]:["ok","Knee locks"]):["bad","Flexion moment"]]];
+  let src=[];
+  if(C.PDFA(M.PDFA)[0]!=="ok")src.push(`distal femur (PDFA ${deg(M.PDFA)})`);
+  if(C.PPTA(M.PPTA)[0]!=="ok")src.push(`proximal tibia (PPTA ${deg(M.PPTA)})`);
+  if(Math.abs(S.sag.flex)>=3)src.push(`soft tissues (${S.sag.flex>0?"flexion contracture":"hyperextension"} ${f0(Math.abs(S.sag.flex))}°)`);
+  let v;
+  if(Math.abs(kf)<3&&!src.length)v="<b>Normal sagittal alignment.</b> The mechanical axis passes just anterior to the knee centre.";
+  else v=`<b>${kf>=0?"Flexion":"Recurvatum"} malalignment of ${f1(Math.abs(kf))}°.</b> ${src.length?"Source: "+src.join(" + ")+".":"Small deviations at several levels."}`;
+  return `<h3>Measurements on this film</h3><table class="read"><tr><th>Measure</th><th>Value</th><th>Reading</th></tr>${rows.map(r=>`<tr><td><b>${r[0]}</b><br><small>${r[1]}</small></td><td class="n">${r[2]}</td><td>${chip(r[3])}</td></tr>`).join("")}</table><div class="verdict">${v}</div>`;
+}
+function readOst(M){
+  const o=S.ost,fin=M.fin;
+  let wedge;
+  const tol=1;
+  const side=v=>v>tol?1:v<-tol?-1:0, sm=side(fin.m), sl=side(fin.l);
+  if(sm>=0&&sl>=0&&(sm+sl)>0)wedge=`Opening wedge${sl===0?" (hinge on lateral cortex)":sm===0?" (hinge on medial cortex)":""}`;
+  else if(sm<=0&&sl<=0&&(sm+sl)<0)wedge=`Closing wedge${sm===0?" (hinge on medial cortex)":sl===0?" (hinge on lateral cortex)":""}`;
+  else if(sm>0)wedge="Neutral wedge (opens medially, closes laterally)";
+  else if(sl>0)wedge="Neutral wedge (opens laterally, closes medially)";
+  else wedge="No wedge (pure translation)";
+  const t=M.trans;
+  const ruleTxt={1:"Rule 1: osteotomy and ACA at the CORA. Full realignment, no translation.",
+    2:"Rule 2: ACA through the CORA, osteotomy elsewhere. The axis realigns; the fragments must translate at the osteotomy.",
+    3:"Rule 3: ACA and osteotomy away from the CORA. Angulation is corrected but a translational deformity is created."}[M.rule];
+  return `<h3>Result of this plan</h3><table class="read">
+  <tr><td>Residual angulation</td><td class="n">${f1(o.theta*(1-o.k))}°</td></tr>
+  <tr><td>Axis translation after correction</td><td class="n">${Math.abs(t)<0.8?"none":f1(Math.abs(t))+" mm"}</td></tr>
+  <tr><td>Shift of fragments at the osteotomy</td><td class="n">${f1(Math.abs(M.cutShift))} mm</td></tr>
+  <tr><td>Medial cortex</td><td class="n">${fin.m>=0?"opens":"overlaps"} ${f1(Math.abs(fin.m))} mm</td></tr>
+  <tr><td>Lateral cortex</td><td class="n">${fin.l>=0?"opens":"overlaps"} ${f1(Math.abs(fin.l))} mm</td></tr>
+  <tr><td>Wedge type</td><td class="n">${wedge}</td></tr></table>
+  <div class="verdict"><b>${ruleTxt.split(":")[0]}.</b>${ruleTxt.slice(ruleTxt.indexOf(":")+1)}</div>`;
+}
+
+/* ---------- render orchestration ---------- */
+const svg=document.getElementById("svg"),stage=document.getElementById("stage");
+function draw(){
+  let r;
+  if(S.sec==="sag"){svg.setAttribute("viewBox","-20 30 610 985");r=renderSag();document.getElementById("filmcap").textContent="Right lower limb, standing lateral";}
+  else if(S.sec==="ost"){svg.setAttribute("viewBox","0 20 540 905");r=renderOst();document.getElementById("filmcap").textContent="Schematic long bone with a varus deformity";}
+  else{svg.setAttribute("viewBox","60 30 520 950");r=renderFrontal(S);document.getElementById("filmcap").textContent="Right lower limb, standing AP (medial on the left)";}
+  stage.innerHTML=r.svg;
+  document.getElementById("filmhint").textContent=(S.sec==="axes"&&S.practice&&S.practice.clicks.length<3)?"Click on the film":"";
+  const ro=document.getElementById("readout");
+  if(S.sec==="sag")ro.innerHTML=readSag(r.M);
+  else if(S.sec==="ost")ro.innerHTML=readOst(r.M);
+  else if(S.sec==="cora")ro.innerHTML=flowFrontal(r.M);
+  else ro.innerHTML=readFrontal(r.M,S.sec==="axes"?"":S.sec);
+  if(S.sec==="jlca"){const e=document.getElementById("mpd");if(e)e.textContent=f1(r.M.madPerDeg)+" mm";}
+  if(S.sec==="dfva"){const e=document.getElementById("amaOut");if(e){const a=Math.atan((S.amaOff+10)/S.amaLen)/D2R;e.innerHTML=`<b>AMA ≈ ${f1(a)}°</b><br><small>tan⁻¹((hip offset + ~10 mm knee offset) ÷ femoral length). Set the TKA distal femoral valgus cut to about ${f0(a)}°.</small>`;}}
+  if(S.sec==="axes")updateGuide();
+}
+function updateGuide(){
+  document.querySelectorAll("#guide li").forEach((li,i)=>{li.classList.toggle("cur",i===S.guide&&!S.practice);li.classList.toggle("done",i<S.guide||!!S.practice);});
+}
+function syncControls(){
+  document.querySelectorAll("[data-bind]").forEach(inp=>{const v=getB(inp.dataset.bind);inp.value=v;const o=document.querySelector(`[data-out="${inp.dataset.bind}"]`);if(o)o.textContent=fmtB(inp.dataset.bind,v,inp.dataset.unit);});
+}
+function getB(k){const p=k.split(".");return p.length>1?S[p[0]][p[1]]:S[k];}
+function setB(k,v){const p=k.split(".");if(p.length>1)S[p[0]][p[1]]=v;else S[k]=v;}
+function fmtB(k,v,u){if(k==="femCora"||k==="tibCora"||k==="ost.s")return (+v).toFixed(2);if(k==="amaOff"||k==="amaLen"||k==="ost.u"||k==="ost.theta"||k==="sag.flex")return f0(v)+u;return f1(v)+u;}
+function go(id){
+  S.sec=id;S.practice=null;
+  const L0=LESSON[id]();
+  document.getElementById("ltitle").textContent=L0.t;
+  document.getElementById("lsub").textContent=L0.s;
+  document.getElementById("lbody").innerHTML=L0.b;
+  document.querySelectorAll("#rail button").forEach(b=>b.setAttribute("aria-current",b.dataset.v===id?"true":"false"));
+  syncControls();draw();
+}
+// rail
+document.getElementById("rail").innerHTML=SECTIONS.map(s=>`<button data-v="${s.id}" aria-current="false"><b>${s.n}</b>${s.short}</button>`).join("");
+document.getElementById("rail").addEventListener("click",e=>{const b=e.target.closest("button");if(b){go(b.dataset.v);if(window.innerWidth<=900)document.querySelector("main").scrollIntoView({behavior:"smooth"});}});
+
+// lesson interactions
+const lb=document.querySelector(".lesson");
+lb.addEventListener("input",e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.bind)return;
+  setB(t.dataset.bind,parseFloat(t.value));
+  const o=document.querySelector(`[data-out="${t.dataset.bind}"]`);if(o)o.textContent=fmtB(t.dataset.bind,t.value,t.dataset.unit);
+  if(t.dataset.bind.startsWith("ost.")&&t.dataset.bind!=="ost.k")S.ost.k=0;
+  draw();
+});
+let anim=null;
+function animateCorrect(){
+  if(anim)cancelAnimationFrame(anim);
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){S.ost.k=1;draw();return;}
+  const t0=performance.now(),dur=1400;
+  S.ost.k=0;
+  const step=now=>{const u=clamp((now-t0)/dur,0,1);S.ost.k=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;draw();if(u<1)anim=requestAnimationFrame(step);};
+  anim=requestAnimationFrame(step);
+}
+lb.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;
+  const act=b.dataset.act,v=b.dataset.v;
+  switch(act){
+    case "preset":Object.assign(S,NORMAL,PRESETS[v].v);syncControls();draw();break;
+    case "guide":S.practice=null;S.guide=+v;draw();break;
+    case "gnext":S.practice=null;S.guide=Math.min(GUIDE.length-1,S.guide+1);draw();break;
+    case "gprev":S.practice=null;S.guide=Math.max(0,S.guide-1);draw();break;
+    case "gall":S.practice=null;S.guide=GUIDE.length-1;draw();break;
+    case "practice":
+      S.practice={targets:[{key:"H",name:"hip centre"},{key:"K",name:"knee centre"},{key:"A",name:"ankle centre"}],clicks:[]};
+      practiceFb();draw();break;
+    case "corabone":S.coraBone=v;document.querySelectorAll('[data-act="corabone"]').forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v));draw();break;
+    case "sagpreset":{const p=SAG_PRESETS[v].v;S.sag.flex=p.flex;S.sag.ppta=p.ppta??PPTA0;S.sag.pdfa=BASE_PDFA+(p.pdfa||0);syncControls();draw();break;}
+    case "rule":{const r=+v;S.ost.k=0;if(r===1){S.ost.u=0;S.ost.aca="bisector";S.ost.s=0;}if(r===2){S.ost.u=-130;S.ost.aca="bisector";S.ost.s=0;}if(r===3){S.ost.u=-130;S.ost.aca="osteotomy";S.ost.s=0;}
+      document.querySelectorAll('[data-act="aca"]').forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===S.ost.aca));syncControls();draw();break;}
+    case "aca":S.ost.aca=v;S.ost.k=0;document.querySelectorAll('[data-act="aca"]').forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v));draw();break;
+    case "correct":animateCorrect();break;
+    case "ostreset":if(anim)cancelAnimationFrame(anim);S.ost.k=0;draw();break;
+  }
+});
+lb.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches("#guide li")){e.preventDefault();e.target.click();}});
+
+function practiceFb(){
+  const el=document.getElementById("practiceFb");if(!el)return;
+  const pr=S.practice;if(!pr){el.innerHTML="";return;}
+  const M=buildFrontal(S);
+  let s="";
+  pr.clicks.forEach((c,i)=>{const t=M[pr.targets[i].key],e=len(sub(c,t));s+=`<div class="fb ${e<4?"good":"bad"}">${cap(pr.targets[i].name)}: ${f1(e)} mm off. ${e<4?"Excellent.":e<8?"Close; aim for the exact centre.":"Look again: "+GUIDE[i][1]}</div>`;});
+  if(pr.clicks.length<3)s+=`<div class="fb"><b>Click the ${pr.targets[pr.clicks.length].name}.</b></div>`;
+  else{const tot=pr.clicks.reduce((a,c,i)=>a+len(sub(c,M[pr.targets[i].key])),0)/3;s+=`<div class="verdict"><b>Mean error ${f1(tot)} mm.</b> An error of 5 mm at the knee centre changes MAD by about 5 mm, enough to move a borderline case across the 15 mm threshold.</div><div class="row"><button class="btn" data-act="practice">Try again</button></div>`;}
+  el.innerHTML=s;
+}
+svg.addEventListener("click",e=>{
+  if(S.sec!=="axes"||!S.practice||S.practice.clicks.length>=3)return;
+  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+  const q=pt.matrixTransform(svg.getScreenCTM().inverse());
+  if(q.x>390)return;
+  S.practice.clicks.push(P(q.x,q.y));practiceFb();draw();
+});
+
+go("axes");
+})();
+</script>
+</body>
+</html>
